@@ -1040,6 +1040,58 @@ body {
   flex-wrap: wrap;
 }
 
+/* ── Confirm dialog ───────────────────────────────────────────
+   Lightweight version of .modal/.modal-backdrop/.modal-card, used by
+   customConfirm() for quick yes/no prompts (logout, delete, cancel claim).
+   Higher z-index than .modal (100) since a confirm can be triggered from
+   inside an already-open modal (e.g. confirming a delete from item details). */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 20, 12, .42);
+  backdrop-filter: blur(8px);
+  animation: confirmFadeIn .15s ease-out;
+}
+
+@keyframes confirmFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.confirm-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  max-width: 380px;
+  width: 100%;
+  padding: 28px;
+  box-shadow: var(--shadow-xl);
+  text-align: center;
+  animation: modalPop .22s cubic-bezier(.34,1.56,.64,1);
+}
+
+.confirm-msg {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.01em;
+  margin: 0 0 22px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.confirm-actions .btn { flex: 1; justify-content: center; }
+
 /* ── Toast ────────────────────────────────────────────────── */
 .toast {
   position: fixed;
