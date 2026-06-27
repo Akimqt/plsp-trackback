@@ -5,10 +5,20 @@ import { createClient } from '@/lib/supabase/client';
 export default function AppPage() {
   useEffect(() => {
     const supabase = createClient();
+    // Guards against React Strict Mode (dev) mounting this effect twice in a
+    // row, which would otherwise register every event listener and realtime
+    // subscription below twice. `cleanupFns` collects everything that needs
+    // to be torn down so the outer useEffect cleanup can actually run it —
+    // previously `init()`'s own `return () => {...}` was just discarded,
+    // since useEffect's cleanup only runs for a function it gets *directly*,
+    // not one buried inside an async function called from inside it.
+    let cancelled = false;
+    const cleanupFns = [];
 
     async function init() {
       // ── Auth gate ────────────────────────────────────────────
       const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled) return;
       if (!user) { window.location.href = '/'; return; }
 
       // ── Get profile ──────────────────────────────────────────
@@ -18,6 +28,7 @@ export default function AppPage() {
         .eq('id', user.id)
         .single();
 
+      if (cancelled) return;
       if (!profile) { window.location.href = '/'; return; }
 
       // ── Declare data arrays ──────────────────────────────────
@@ -628,6 +639,8 @@ export default function AppPage() {
       await Promise.all([fetchItems(), fetchClaims(), fetchNotifs()]);
       await renderAdmin();
 
+      if (cancelled) return;
+
       // ── Real-time ────────────────────────────────────────────
       const channel = supabase.channel('items-live')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, async () => {
@@ -658,15 +671,23 @@ export default function AppPage() {
           renderChatList();
         }).subscribe();
 
-      return () => {
+      cleanupFns.push(() => {
         supabase.removeChannel(channel);
         supabase.removeChannel(claimsChannel);
         supabase.removeChannel(notifsChannel);
         supabase.removeChannel(messagesChannel);
-      };
+      });
     }
 
     init();
+
+    // This is the cleanup useEffect actually runs (synchronously, on unmount
+    // or before a Strict-Mode remount) — unlike init()'s old internal
+    // `return () => {...}`, which was never reachable by React at all.
+    return () => {
+      cancelled = true;
+      cleanupFns.forEach((fn) => fn());
+    };
   }, []);
 
   // ── SVG icons ────────────────────────────────────────────────
