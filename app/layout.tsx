@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "TrackBack — PLSP Lost & Found",
+  title: "TrackBack | PLSP Lost & Found",
   description:
-    "Digital lost-and-found system for Pamantasan ng Lungsod ng San Pablo. Report, search, and claim lost or found items.",
+    "Digital lost and found system for Pamantasan ng Lungsod ng San Pablo. Report, search, and claim lost or found items.",
 };
 
 export default function RootLayout({

@@ -1,6 +1,8 @@
 'use client';
 import { useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { ICONS_HTML, getCategoryIconHtml } from '@/lib/icons-html';
+import { actionIcons, defaultItemIcon } from '@/lib/icons';
 
 export default function AppPage() {
   useEffect(() => {
@@ -139,12 +141,12 @@ export default function AppPage() {
         const unread = notifs.filter(n => !n.read).length;
         dot.style.display = unread > 0 ? 'block' : 'none';
         if (!notifs.length) {
-          list.innerHTML = '<li><em style="color:var(--muted)">No notifications</em></li>';
+          list.innerHTML = '<li><em style="color:var(--muted)">No notifications yet.</em></li>';
           return;
         }
         list.innerHTML = notifs.map(n =>
           `<li class="${n.read ? '' : 'unread'}" data-notif="${n.id}">
-            <span style="font-size:16px">${n.read ? '🔔' : '🔴'}</span>
+            <span class="notif-icon">${ICONS_HTML.bell}</span>
             <div>${n.text}<small>${new Date(n.created_at).toLocaleDateString()}</small></div>
           </li>`
         ).join('');
@@ -194,7 +196,7 @@ export default function AppPage() {
       function renderItems(list) {
         const grid = document.getElementById('itemsGrid');
         if (!list.length) {
-          grid.innerHTML = `<div class="empty-state"><span>🔍</span><p>No items match your filters.</p>
+          grid.innerHTML = `<div class="empty-state"><span class="empty-icon">${ICONS_HTML.search}</span><p>No items match your filters.</p>
             <button class="btn btn-ghost btn-sm" id="clearFiltersBtn">Clear filters</button></div>`;
           document.getElementById('clearFiltersBtn')?.addEventListener('click', () => {
             document.getElementById('searchInput2').value   = '';
@@ -208,10 +210,10 @@ export default function AppPage() {
           <button class="item" data-id="${it.id}" aria-label="View ${it.name}">
             ${it.photo_url
               ? `<div class="item-img"><img src="${it.photo_url}" alt="${it.name}" style="width:100%;height:100%;object-fit:cover"/></div>`
-              : `<div class="item-img">${it.icon || '📦'}</div>`}
+              : `<div class="item-img">${getCategoryIconHtml(it.category)}</div>`}
             <div class="item-body">
               <div class="item-title">${it.name}</div>
-              <div class="item-meta">${it.category} • ${it.location}</div>
+              <div class="item-meta">${it.category} · ${it.location}</div>
               <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
                 <span class="${badgeClass(it.status)}">${it.status}</span>
                 <span style="font-size:11px;color:var(--muted)">${new Date(it.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</span>
@@ -229,7 +231,7 @@ export default function AppPage() {
         }
         el.innerHTML = display.map(it =>
           `<li data-id="${it.id}" style="cursor:pointer" tabindex="0" role="button">
-            <span>${it.icon || '📦'} ${it.name}</span>
+            <span class="recent-item-label"><span class="recent-icon">${getCategoryIconHtml(it.category)}</span>${it.name}</span>
             <span class="${badgeClass(it.status)}">${it.status}</span>
           </li>`
         ).join('');
@@ -264,7 +266,7 @@ export default function AppPage() {
       async function fetchClaims() {
         const { data } = await supabase
           .from('claims')
-          .select('*, items(name, icon, category)')
+          .select('*, items(name, category)')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
         CLAIMS = data || [];
@@ -283,11 +285,11 @@ export default function AppPage() {
         }
         body.innerHTML = CLAIMS.map(c => `
           <tr>
-            <td>${c.items?.icon || '📦'} <strong>${c.items?.name || 'Unknown'}</strong></td>
+            <td><span class="table-icon">${getCategoryIconHtml(c.items?.category)}</span><strong>${c.items?.name || 'Unknown item'}</strong></td>
             <td>${new Date(c.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
             <td><span class="${badgeClass(c.status)}">${c.status}</span></td>
             <td style="display:flex;gap:6px;flex-wrap:wrap">
-              <button class="btn btn-ghost btn-sm" data-claim-msg="${c.item_id}">💬 Message</button>
+              <button class="btn btn-ghost btn-sm" data-claim-msg="${c.item_id}">${ICONS_HTML.message} Message</button>
               ${c.status === 'Pending'
                 ? `<button class="btn btn-danger btn-sm" data-claim-cancel="${c.id}">Cancel</button>`
                 : ''}
@@ -303,7 +305,7 @@ export default function AppPage() {
         }));
         body.querySelectorAll('[data-claim-msg]').forEach(b => b.addEventListener('click', () => {
           const item = ITEMS.find(i => String(i.id) === String(b.dataset.claimMsg));
-          if (item) openChatForItem(item.id, item.name, item.icon);
+          if (item) openChatForItem(item.id, item.name, item.category);
           navigate('messages');
         }));
       }
@@ -318,7 +320,7 @@ export default function AppPage() {
         activeItem = it;
         document.getElementById('mIcon').innerHTML = it.photo_url
           ? `<img src="${it.photo_url}" alt="${it.name}" style="width:88px;height:88px;object-fit:cover;border-radius:14px"/>`
-          : it.icon || '📦';
+          : getCategoryIconHtml(it.category);
         document.getElementById('mName').textContent     = it.name;
         document.getElementById('mBadge').innerHTML      = `<span class="${badgeClass(it.status)}">${it.status}</span>`;
         document.getElementById('mCategory').textContent = it.category;
@@ -329,7 +331,7 @@ export default function AppPage() {
         const claimBtn = document.getElementById('mClaim');
         const already  = CLAIMS.some(c => String(c.item_id) === String(it.id));
         claimBtn.disabled    = already || it.status === 'Returned';
-        claimBtn.textContent = already ? '✓ Already claimed' : 'Claim Item';
+        claimBtn.innerHTML   = already ? `${ICONS_HTML.check} Already claimed` : 'Claim item';
         modal.classList.add('open');
       }
 
@@ -351,7 +353,7 @@ export default function AppPage() {
           text:    `Claim submitted for "${activeItem.name}".`,
           read:    false,
         });
-        toast('✅ Claim submitted!');
+        toast('Claim submitted.');
         closeModal();
         await fetchClaims();
         await fetchNotifs();
@@ -361,7 +363,7 @@ export default function AppPage() {
       document.getElementById('mMessage').addEventListener('click', () => {
         if (!activeItem) return;
         closeModal();
-        openChatForItem(activeItem.id, activeItem.name, activeItem.icon);
+        openChatForItem(activeItem.id, activeItem.name, activeItem.category);
         navigate('messages');
       });
 
@@ -402,21 +404,22 @@ export default function AppPage() {
           }
         }
 
-        const dateVal = document.getElementById('rDate').value;
+        const dateVal  = document.getElementById('rDate').value;
+        const category = document.getElementById('rCategory').value;
         const { data: newItem, error } = await supabase.from('items').insert({
           name:          document.getElementById('rName').value.trim(),
-          category:      document.getElementById('rCategory').value,
+          category,
           status:        document.getElementById('rType').value,
           location:      document.getElementById('rLocation').value.trim(),
           description:   document.getElementById('rDesc').value.trim() || 'No description provided.',
-          icon:          document.getElementById('rIcon').value.trim() || '📦',
+          icon:          category || 'Other',
           photo_url,
           date:          dateVal || new Date().toISOString().split('T')[0],
           reporter_id:   user.id,
           reporter_name: profile.name,
         }).select().single();
 
-        btn.disabled = false; btn.textContent = 'Submit Report';
+        btn.disabled = false; btn.textContent = 'Submit report';
         if (error) { toast('Failed to submit report.', 'error'); return; }
 
         await supabase.from('notifications').insert({
@@ -429,7 +432,7 @@ export default function AppPage() {
         dateInput.valueAsDate = new Date();
         const preview = document.getElementById('photoPreview');
         if (preview) preview.style.display = 'none';
-        toast('✅ Report submitted!');
+        toast('Report submitted.');
         await fetchItems();
         await fetchNotifs();
         navigate('dashboard');
@@ -439,12 +442,12 @@ export default function AppPage() {
       let activeChatItemId = null;
 
       const REPLIES = [
-        'Great, sounds like it! When can we meet?',
-        'Awesome, I can be at the front desk in 10 mins.',
-        "Perfect — I'll bring it tomorrow morning.",
+        'Great, sounds like it. When can we meet?',
+        'Awesome, I can be at the front desk in 10 minutes.',
+        "Perfect, I'll bring it tomorrow morning.",
         'Got it. Where would you like to pick it up?',
-        'Thanks for confirming! 🙌',
-        "Sure! I'll be near the library at noon.",
+        'Thanks for confirming!',
+        "Sure, I'll be near the library at noon.",
       ];
 
       async function fetchMessages(itemId) {
@@ -469,7 +472,7 @@ export default function AppPage() {
         }
         listEl.innerHTML = withChats.map(it =>
           `<div class="convo-item${activeChatItemId === it.id ? ' active' : ''}" data-chat-item="${it.id}">
-            <span class="convo-icon">${it.icon || '📦'}</span>
+            <span class="convo-icon">${getCategoryIconHtml(it.category)}</span>
             <div class="convo-info">
               <strong>${it.name}</strong>
               <small>Click to open chat</small>
@@ -479,18 +482,18 @@ export default function AppPage() {
         listEl.querySelectorAll('[data-chat-item]').forEach(el =>
           el.addEventListener('click', () => {
             const it = ITEMS.find(i => String(i.id) === el.dataset.chatItem);
-            if (it) openChatForItem(it.id, it.name, it.icon);
+            if (it) openChatForItem(it.id, it.name, it.category);
           })
         );
         if (!activeChatItemId && withChats.length) {
-          openChatForItem(withChats[0].id, withChats[0].name, withChats[0].icon);
+          openChatForItem(withChats[0].id, withChats[0].name, withChats[0].category);
         }
       }
 
-      async function openChatForItem(itemId, itemName, itemIcon) {
+      async function openChatForItem(itemId, itemName, itemCategory) {
         activeChatItemId = itemId;
         const header = document.getElementById('chatHeader');
-        if (header) header.innerHTML = `<span>${itemIcon || '📦'}</span> <strong>${itemName}</strong>`;
+        if (header) header.innerHTML = `<span class="chat-header-icon">${getCategoryIconHtml(itemCategory)}</span> <strong>${itemName}</strong>`;
         const chatList = document.getElementById('chatList');
         chatList.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px">Loading…</div>';
         const existing = await fetchMessages(itemId);
@@ -571,23 +574,23 @@ export default function AppPage() {
           const actionBtns  = isDone
             ? `<em style="color:var(--muted);font-size:12px">Done</em>`
             : `${it.status === 'Found' && itemClaim
-                ? `<button class="btn btn-primary btn-sm" data-act="approve" data-id="${it.id}" data-claim="${itemClaim.id}">✅ Approve</button>
-                   <button class="btn btn-danger btn-sm"  data-act="reject"  data-id="${it.id}" data-claim="${itemClaim.id}">❌ Reject</button>`
+                ? `<button class="btn btn-primary btn-sm" data-act="approve" data-id="${it.id}" data-claim="${itemClaim.id}">${ICONS_HTML.checkCircle} Approve</button>
+                   <button class="btn btn-danger btn-sm"  data-act="reject"  data-id="${it.id}" data-claim="${itemClaim.id}">${ICONS_HTML.xCircle} Reject</button>`
                 : ''}
                ${it.status === 'Lost' || it.status === 'Found'
-                ? `<button class="btn btn-secondary btn-sm" data-act="returned" data-id="${it.id}">🔄 Returned</button>`
+                ? `<button class="btn btn-secondary btn-sm" data-act="returned" data-id="${it.id}">${ICONS_HTML.refresh} Returned</button>`
                 : ''}`;
           return `<tr>
-            <td><span style="font-size:18px;margin-right:6px">${it.icon || '📦'}</span><strong>${it.name}</strong></td>
+            <td><span class="table-icon">${getCategoryIconHtml(it.category)}</span><strong>${it.name}</strong></td>
             <td>${it.category}</td>
             <td>${it.location}</td>
             <td>${new Date(it.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</td>
             <td>${it.reporter_name || '—'}</td>
             <td class="admin-status-${it.id}">${statusBadge}</td>
             <td style="display:flex;gap:5px;flex-wrap:wrap;align-items:center">
-              <button class="btn btn-ghost btn-sm" data-view="${it.id}">🔍 View</button>
+              <button class="btn btn-ghost btn-sm" data-view="${it.id}">${ICONS_HTML.eye} View</button>
               <span class="admin-actions-${it.id}" style="display:inline-flex;gap:5px;flex-wrap:wrap">${actionBtns}</span>
-              <button class="btn btn-danger btn-sm" data-act="delete" data-id="${it.id}">🗑</button>
+              <button class="btn btn-danger btn-sm" data-act="delete" data-id="${it.id}">${ICONS_HTML.trash}</button>
             </td>
           </tr>`;
         }).join('');
@@ -608,22 +611,22 @@ export default function AppPage() {
           const ok = await customConfirm(`Delete "${it.name}" permanently?`);
           if (!ok) return;
           await supabase.from('items').delete().eq('id', id);
-          toast(`🗑 "${it.name}" deleted.`);
+          toast(`"${it.name}" deleted.`);
           await fetchItems(); await renderAdmin(); return;
         }
         if (act === 'approve' && claimId) {
           await supabase.from('claims').update({ status: 'Approved' }).eq('id', claimId);
           const { data: claim } = await supabase.from('claims').select('user_id').eq('id', claimId).single();
           if (claim) await supabase.from('notifications').insert({ user_id: claim.user_id, text: `Your claim for "${it.name}" was approved.`, read: false });
-          toast(`✅ Approved: ${it.name}`);
+          toast(`Approved: ${it.name}`);
         } else if (act === 'reject' && claimId) {
           await supabase.from('claims').update({ status: 'Rejected' }).eq('id', claimId);
           const { data: claim } = await supabase.from('claims').select('user_id').eq('id', claimId).single();
           if (claim) await supabase.from('notifications').insert({ user_id: claim.user_id, text: `Your claim for "${it.name}" was rejected.`, read: false });
-          toast(`❌ Rejected: ${it.name}`);
+          toast(`Rejected: ${it.name}`);
         } else if (act === 'returned') {
           await supabase.from('items').update({ status: 'Returned' }).eq('id', id);
-          toast(`✅ "${it.name}" marked as Returned.`);
+          toast(`"${it.name}" marked as returned.`);
           await fetchItems();
         }
         await fetchClaims(); await renderAdmin();
@@ -752,6 +755,7 @@ export default function AppPage() {
               </svg>
             </button>
             <div className="search">
+              <span className="search-icon">{actionIcons.search}</span>
               <input type="text" id="searchInput" placeholder="Search items, locations, categories…" aria-label="Search" />
             </div>
             <div className="topbar-actions">
@@ -796,12 +800,12 @@ export default function AppPage() {
                 <ul className="list" id="recentList"></ul>
               </div>
               <div className="card">
-                <h3>Quick Actions</h3>
+                <h3>Quick actions</h3>
                 <div className="quick-actions">
-                  <button className="btn btn-secondary" data-nav="report">📝 Report Lost Item</button>
-                  <button className="btn btn-secondary" data-nav="report">✨ Report Found Item</button>
-                  <button className="btn btn-secondary" data-nav="browse">🔎 Browse Items</button>
-                  <button className="btn btn-secondary" data-nav="messages">💬 Open Messages</button>
+                  <button className="btn btn-secondary" data-nav="report">{actionIcons.reportPlus} Report lost item</button>
+                  <button className="btn btn-secondary" data-nav="report">{actionIcons.reportFound} Report found item</button>
+                  <button className="btn btn-secondary" data-nav="browse">{actionIcons.search} Browse items</button>
+                  <button className="btn btn-secondary" data-nav="messages">{actionIcons.message} Open messages</button>
                 </div>
               </div>
             </div>
@@ -854,7 +858,7 @@ export default function AppPage() {
               <label className="field">
                 <span className="field-label">Item Name <span className="req">*</span></span>
                 <input type="text" id="rName" required placeholder="e.g. Black Jansport Backpack, iPhone 13, Blue Hydro Flask" />
-                <small className="field-help">Be specific — include brand, color, or model.</small>
+                <small className="field-help">Be specific. Include the brand, color, or model.</small>
               </label>
               <div className="form-row">
                 <label className="field">
@@ -871,24 +875,17 @@ export default function AppPage() {
               <label className="field">
                 <span className="field-label">Description <span className="req">*</span></span>
                 <textarea id="rDesc" rows="5" required placeholder="Color, brand, size, unique marks, contents inside…"></textarea>
-                <small className="field-help">More detail = faster verification and return.</small>
+                <small className="field-help">More detail means faster verification and a faster return.</small>
               </label>
-              <div className="form-row">
-                <label className="field">
-                  <span className="field-label">Emoji icon</span>
-                  <input type="text" id="rIcon" maxLength="2" placeholder="🎒 📱 🧥 🪪" />
-                  <small className="field-help">Choose an emoji that represents the item.</small>
-                </label>
-                <label className="field">
-                  <span className="field-label">Photo</span>
-                  <input type="file" id="rPhoto" accept="image/*" className="file-input" />
-                  <small className="field-help">Upload a clear image to improve matching.</small>
-                </label>
-              </div>
+              <label className="field">
+                <span className="field-label">Photo</span>
+                <input type="file" id="rPhoto" accept="image/*" className="file-input" />
+                <small className="field-help">Upload a clear image to improve matching. Optional, but it helps.</small>
+              </label>
               <img id="photoPreview" src="/plsp-logo.jpg" alt="Preview" style={{ display: 'none', maxHeight: 160, borderRadius: 10, objectFit: 'cover', border: '1px solid var(--border)', marginTop: 4 }} />
               <div className="form-actions">
                 <button type="button" className="btn btn-ghost" data-nav="dashboard">Cancel</button>
-                <button type="submit" className="btn btn-primary">Submit Report</button>
+                <button type="submit" className="btn btn-primary">Submit report</button>
               </div>
             </form>
           </section>
@@ -954,7 +951,7 @@ export default function AppPage() {
         <div className="modal-backdrop" data-close="true"></div>
         <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="mName">
           <button className="modal-close" data-close="true" aria-label="Close">×</button>
-          <div className="modal-icon" id="mIcon">📦</div>
+          <div className="modal-icon" id="mIcon">{defaultItemIcon}</div>
           <h2 id="mName">Item</h2>
           <div id="mBadge"></div>
           <dl className="modal-info">
@@ -966,8 +963,8 @@ export default function AppPage() {
           </dl>
           <div className="modal-actions">
             <button className="btn btn-ghost" data-close="true">Close</button>
-            <button className="btn btn-secondary" id="mMessage">💬 Message</button>
-            <button className="btn btn-primary" id="mClaim">Claim Item</button>
+            <button className="btn btn-secondary" id="mMessage">{actionIcons.message} Message</button>
+            <button className="btn btn-primary" id="mClaim">Claim item</button>
           </div>
         </div>
       </div>

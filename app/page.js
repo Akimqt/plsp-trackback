@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { categoryIcons, actionIcons } from '@/lib/icons';
 
 export default function Landing() {
   const supabase = createClient();
@@ -49,10 +50,25 @@ export default function Landing() {
     return () => document.removeEventListener('keydown', handleKey);
   }, [modalOpen]);
 
-  // ── Scroll reveal ────────────────────────────────────────────
+  // ── Hero load-in sequence ─────────────────────────────────────
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setLoaded(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // ── Scroll reveal (staggers direct children for an orchestrated feel) ──
   useEffect(() => {
     const io = new IntersectionObserver(
-      (entries) => entries.forEach((en) => { if (en.isIntersecting) en.target.classList.add('in'); }),
+      (entries) => entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        const target = en.target;
+        target.classList.add('in');
+        target.querySelectorAll('.stagger').forEach((child, i) => {
+          child.style.transitionDelay = `${i * 70}ms`;
+        });
+        io.unobserve(target);
+      }),
       { threshold: 0.12 }
     );
     document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
@@ -136,17 +152,17 @@ export default function Landing() {
       {/* ── Main ── */}
       <main>
         {/* ── Hero ── */}
-        <section className="hero">
+        <section className={`hero${loaded ? ' loaded' : ''}`}>
           <div className="hero-inner">
             <div className="hero-text">
-              <span className="eyebrow">Pamantasan ng Lungsod ng San Pablo • Campus Lost &amp; Found</span>
+              <span className="eyebrow">Pamantasan ng Lungsod ng San Pablo · Campus Lost &amp; Found</span>
               <h1>Lost something<br />at PLSP?<br /><span className="accent">Get it back, fast.</span></h1>
               <p className="lead">
-                TrackBack is the official Lost &amp; Found platform for Pamantasan ng Lungsod ng San Pablo —
-                connecting students, faculty, and staff to reunite lost items with their owners.
+                TrackBack is the official Lost &amp; Found platform for PLSP, connecting students,
+                faculty, and staff so lost items find their way back to their owners.
               </p>
               <div className="cta-row">
-                <button className="btn btn-primary btn-lg" onClick={openModal}>Get started — free</button>
+                <button className="btn btn-primary btn-lg" onClick={openModal}>Get started, it&apos;s free</button>
                 <a href="#features" className="btn btn-ghost btn-lg">Learn more</a>
               </div>
               <div className="trust">
@@ -161,10 +177,10 @@ export default function Landing() {
                 <span className="title">trackback.plsp.edu.ph</span>
               </div>
               <div className="hero-card-body">
-                <div className="mini-item"><span>🎒</span><div><b>Black Backpack</b><small>Library • Lost</small></div></div>
-                <div className="mini-item"><span>📱</span><div><b>iPhone 14</b><small>Gym • Found</small></div></div>
-                <div className="mini-item"><span>🍶</span><div><b>Blue Water Bottle</b><small>Cafeteria • Found</small></div></div>
-                <div className="mini-item"><span>📚</span><div><b>Calculus Textbook</b><small>Room 204 • Returned</small></div></div>
+                <div className="mini-item"><span className="mini-icon">{categoryIcons.Accessories}</span><div><b>Black Backpack</b><small><span className="status-dot status-lost" />Library · Lost</small></div></div>
+                <div className="mini-item"><span className="mini-icon">{categoryIcons.Electronics}</span><div><b>iPhone 14</b><small><span className="status-dot status-found" />Gym · Found</small></div></div>
+                <div className="mini-item"><span className="mini-icon">{categoryIcons.Accessories}</span><div><b>Blue Water Bottle</b><small><span className="status-dot status-found" />Cafeteria · Found</small></div></div>
+                <div className="mini-item"><span className="mini-icon">{categoryIcons.Books}</span><div><b>Calculus Textbook</b><small><span className="status-dot status-returned" />Room 204 · Returned</small></div></div>
               </div>
             </div>
           </div>
@@ -173,27 +189,27 @@ export default function Landing() {
         {/* ── Features ── */}
         <section className="features reveal" id="features">
           <h2>Everything you need to find lost items</h2>
-          <p className="section-sub">A complete toolkit for students, staff, and admins — built to maximize returns.</p>
+          <p className="section-sub">A complete toolkit for students, staff, and admins, built to maximize returns.</p>
           <div className="feature-grid">
-            <div className="feature">
-              <div className="f-icon">📝</div>
+            <div className="feature stagger">
+              <div className="f-icon">{actionIcons.reportPlus}</div>
               <h3>Report in seconds</h3>
-              <p>Quickly log what you&apos;ve lost or found with photos and details.</p>
+              <p>Log what you&apos;ve lost or found with photos and details.</p>
             </div>
-            <div className="feature">
-              <div className="f-icon">🔎</div>
+            <div className="feature stagger">
+              <div className="f-icon">{actionIcons.search}</div>
               <h3>Smart browsing</h3>
               <p>Filter by category, status, and location to find your item fast.</p>
             </div>
-            <div className="feature">
-              <div className="f-icon">💬</div>
+            <div className="feature stagger">
+              <div className="f-icon">{actionIcons.message}</div>
               <h3>Secure messaging</h3>
               <p>Coordinate returns privately without sharing personal contacts.</p>
             </div>
-            <div className="feature">
-              <div className="f-icon">🛡️</div>
+            <div className="feature stagger">
+              <div className="f-icon">{actionIcons.shield}</div>
               <h3>Verified claims</h3>
-              <p>Admins review every claim to make sure items go to the right owner.</p>
+              <p>Admins review every claim so items go back to the right owner.</p>
             </div>
           </div>
         </section>
@@ -203,17 +219,17 @@ export default function Landing() {
           <h2>How it works</h2>
           <p className="section-sub">Three simple steps from lost to found.</p>
           <div className="steps">
-            <div className="step">
+            <div className="step stagger">
               <span className="step-num">1</span>
               <h3>Sign in</h3>
               <p>Use your campus account to access TrackBack securely.</p>
             </div>
-            <div className="step">
+            <div className="step stagger">
               <span className="step-num">2</span>
               <h3>Report or browse</h3>
-              <p>Submit a lost/found report — or search what&apos;s already listed.</p>
+              <p>Submit a lost or found report, or search what&apos;s already listed.</p>
             </div>
-            <div className="step">
+            <div className="step stagger">
               <span className="step-num">3</span>
               <h3>Reunite</h3>
               <p>Message the finder, verify the item, and pick it up.</p>
@@ -233,7 +249,7 @@ export default function Landing() {
 
       {/* ── Footer ── */}
       <footer className="footer">
-        <div>© 2026 TrackBack — Pamantasan ng Lungsod ng San Pablo</div>
+        <div>© 2026 TrackBack, Pamantasan ng Lungsod ng San Pablo</div>
       </footer>
 
       {/* ── Login Modal ── */}

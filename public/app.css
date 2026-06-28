@@ -259,16 +259,19 @@ body {
   position: relative;
 }
 
-.search::before {
-  content: '🔎';
+.search-icon {
   position: absolute;
-  left: 13px;
+  left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 13px;
-  opacity: .45;
+  width: 16px;
+  height: 16px;
+  color: var(--muted);
   pointer-events: none;
+  display: grid;
+  place-items: center;
 }
+.search-icon svg { width: 15px; height: 15px; }
 
 .search input {
   width: 100%;
@@ -312,6 +315,10 @@ body {
   letter-spacing: -.01em;
   white-space: nowrap;
 }
+
+.btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+.btn-sm svg { width: 13px; height: 13px; }
+.btn-lg svg { width: 15px; height: 15px; }
 
 .btn-primary {
   background: var(--gradient);
@@ -586,10 +593,11 @@ body {
   background: var(--gradient-subtle);
   display: grid;
   place-items: center;
-  font-size: 46px;
+  color: var(--green-light);
   border-bottom: 1px solid var(--border);
   overflow: hidden;
 }
+.item-img svg { width: 38px; height: 38px; }
 
 .item-body { padding: 16px; }
 
@@ -614,7 +622,17 @@ body {
   color: var(--muted);
 }
 
-.empty-state span { font-size: 48px; display: block; margin-bottom: 14px; }
+.empty-icon {
+  display: grid;
+  place-items: center;
+  margin: 0 auto 14px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--muted-2);
+}
+.empty-icon svg { width: 26px; height: 26px; }
 .empty-state p { font-size: 15px; margin-bottom: 18px; }
 
 /* ── Badges ───────────────────────────────────────────────── */
@@ -822,7 +840,34 @@ body {
   border-left: 3px solid var(--green);
 }
 
-.convo-icon { font-size: 22px; flex-shrink: 0; }
+.convo-icon {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--green-50);
+  color: var(--green);
+}
+.convo-icon svg { width: 15px; height: 15px; }
+
+/* Generic small icon wrappers reused across tables, lists, and the chat
+   header wherever an item's category icon or a status icon needs to sit
+   inline with text. */
+.table-icon, .recent-icon, .chat-header-icon, .notif-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--green);
+  vertical-align: middle;
+}
+.table-icon svg, .recent-icon svg, .chat-header-icon svg { width: 16px; height: 16px; }
+.table-icon { margin-right: 8px; }
+.notif-icon { width: 16px; height: 16px; color: var(--muted-2); margin-top: 1px; }
+.recent-item-label { display: inline-flex; align-items: center; gap: 8px; }
+.chat-header-icon svg { width: 17px; height: 17px; }
 
 .convo-info strong {
   display: block;
@@ -998,10 +1043,11 @@ body {
   border: 1px solid var(--border);
   display: grid;
   place-items: center;
-  font-size: 44px;
+  color: var(--green-light);
   margin-bottom: 16px;
   overflow: hidden;
 }
+.modal-icon svg { width: 38px; height: 38px; }
 
 .modal-card h2 {
   font-family: 'Sora', sans-serif;
